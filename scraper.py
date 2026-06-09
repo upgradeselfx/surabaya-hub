@@ -9,7 +9,7 @@ supabase = create_client(url, key)
 
 def run_scraper():
     # URL target dari loker.id untuk area Surabaya
-    target_url = "https://www.loker.id/lokasi-pekerjaan/surabaya"
+    target_url = "https://www.google.com"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
