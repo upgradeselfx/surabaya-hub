@@ -3,40 +3,42 @@ import requests
 from bs4 import BeautifulSoup
 from supabase import create_client
 
-url = os.environ.get("SUPABASE_URL")
-key = os.environ.get("SUPABASE_KEY")
-supabase = create_client(url, key)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def run():
-    target_url = "https://www.loker.id/lokasi-pekerjaan/surabaya"
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+    }
+    url = "https://www.loker.id/lokasi-pekerjaan/surabaya"
     
-    print("Mencoba mengakses situs...") # Cek apakah ini muncul di log
-    response = requests.get(target_url, headers=headers)
-    print(f"Status Code: {response.status_code}") # Jika muncul 403 atau 404, ini masalahnya
+    print(f"--- Memulai Scraping: {url} ---")
     
-    soup = BeautifulSoup(response.content, 'html.parser')
-    jobs = soup.find_all('article', class_='post-item')
-    print(f"Jumlah lowongan ditemukan: {len(jobs)}") # Cek apakah ada data yang diambil
-    
-    
-    for job in jobs:
-        try:
-            title_tag = job.find('h2', class_='entry-title')
-            link_tag = title_tag.find('a')
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        print(f"Status Code: {response.status_code}")
+        
+        if response.status_code != 200:
+            print("Gagal akses situs!")
+            return
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        jobs = soup.select('article.post-item') 
+        print(f"Ditemukan {len(jobs)} lowongan.")
+        
+        for job in jobs:
+            title = job.select_one('h2.entry-title a').text.strip()
+            link = job.select_one('h2.entry-title a')['href']
             
-            data = {
-                "title": title_tag.text.strip(),
-                "url": link_tag['href']
-            }
-            
-            # Cek apakah sudah ada di DB
-            existing = supabase.table("listings").select("id").eq("url", data['url']).execute()
-            if not existing.data:
-                supabase.table("listings").insert(data).execute()
-                print(f"Berhasil ambil: {data['title']}")
-        except:
-            continue
+            exist = supabase.table("listings").select("id").eq("url", link).execute()
+            if not exist.data:
+                supabase.table("listings").insert({"title": title, "url": link}).execute()
+                print(f"Berhasil simpan: {title}")
+                
+    except Exception as e:
+        print(f"Error fatal: {e}")
 
 if __name__ == "__main__":
-    run_scraper()
+    run()
