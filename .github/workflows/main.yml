@@ -1,0 +1,16 @@
+name: Auto Scraper
+on:
+  schedule:
+    - cron: '0 * * * *' # Jalan tiap 1 jam
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 supabase
+      - name: Run Scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scraper.py
